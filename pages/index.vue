@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { WarcraftLogsSession } from '~/composables/useAuth'
+import type { Fight } from '~/composables/useWarcraftlogs'
 
 const session = useCookie<WarcraftLogsSession | null>('session')
 const router = useRouter()
@@ -7,21 +8,29 @@ if (!session.value) {
   router.push('/login')
 }
 
-const { getReportIdFromUrl, getReport, getDamageFromFights } = useWarcraftlogs()
+const { getReportIdFromUrl, getReport, getDamageFromFights, getIntervalsFromFight } = useWarcraftlogs()
 
 const interwovenThreads = ref(true)
 const warcraftlogsUrl = ref('https://www.warcraftlogs.com/reports/1FGcyYVXaCNvtmwk')
-const analyze = () => {
+const analyze = async () => {
   const reportId = getReportIdFromUrl(warcraftlogsUrl.value)
   if (!reportId) return
   console.log('reportId', reportId)
-  const { result: report } = getReport(reportId)
+  const { data: report } = await getReport(reportId)
   if (!report.value) return
   console.log(report.value)
-  const fightIds = report.value.reportData.report.fights.map((fight) => fight.id)
-  console.log(fightIds)
-  const { result: damage } = getDamageFromFights(reportId, fightIds)
-  console.log(damage.value)
+  // Filter out fights with no duration
+  const validFights = report.value.reportData.report.fights.filter((fight: Fight) => {
+    if (fight.startTime === fight.endTime) return false
+    return fight.id
+  })
+
+  for (const fight of validFights) {
+    const intervals = getIntervalsFromFight(fight, interwovenThreads.value)
+    console.log(intervals)
+  }
+  // const { result: damage } = getDamageFromFights(reportId, fightIds)
+  // console.log(damage.value)
 }
 </script>
 
