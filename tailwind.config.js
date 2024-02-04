@@ -10,4 +10,4 @@ export const content = [
 export const theme = {
   extend: {},
 }
-export const plugins = [require('@tailwindcss/typography')]
+export const plugins = [require('@tailwindcss/typography'), require('@tailwindcss/forms')]
